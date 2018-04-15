@@ -15,12 +15,9 @@ polygonise_travel_times -> create binary shapefiles
 
 
 import os
-import json
-from flask import jsonify
 import gdal, osr, ogr
 import numpy as np
 from skimage import graph
-import psycopg2
 
 
 class Cost_distance:
@@ -28,7 +25,7 @@ class Cost_distance:
 
 	#Initialise
 	def __init__(self, start_coord, num_hours, travel_method, country_chosen, population_chosen):
-		"""Function initialises object and creates variables.
+		"""Function initialises object and creates class variables.
 		
 		Arguments:
 		Input variables from client-side:
@@ -42,6 +39,12 @@ class Cost_distance:
 		self.travel_method = travel_method
 		self.country_chosen = country_chosen
 		self.population_chosen = population_chosen
+		self.postgis_table = ""
+		self.Costsurfacefn = ""
+		self.raster_bin = ""
+		self.raster_cont = ""
+		self.shp_bin = ""
+
 
 
 	#Remove data from previous analyses
@@ -66,40 +69,37 @@ class Cost_distance:
 
 
 	#Create variables for inputs from data sent via AJAX
-	def define_variables(self, country_chosen, travel_method):
+	def define_variables(self):
 		"""Fuction to define variables for data to be created.
 
 		Arguments:
-		country_chosen from AJAX
-		travel_method from AJAX
+		None
 
 		Returns:
-		names for costsurface, binary raster, continuous raster, binary shp,
-		postGIS table
+		None
 		"""		
-		CostSurfacefn = "rasters/" + country_chosen.upper() + "/" + country_chosen.upper() + "_" + travel_method + "_friction.tif" #Cost raster for chosen country and travel method
-		empty_folders()
-		raster_bin = "output/" + country_chosen + "_raster_bin.tif" # Binary output raster
-		raster_cont = "opt/geoserver/data_dir/produced_rasters/time-cost-raster.tif" # Continous output raster -> Needs to be displayed in Geoserver
-		shp_bin = "opt/geoserver/data_dir/produced_shapefiles/" + country_chosen + "_shp_bin.shp" # Binary shp polygon showing pop inside travel time -> Needs to go to postgis and geoserver
-		postgis_table = country_chosen + "_travel_costs_polygon"
-		return CostSurfacefn, raster_bin, raster_cont, shp_bin, postgis_table
+		self.CostSurfacefn = "rasters/" + self.country_chosen.upper() + "/" + self.country_chosen.upper() + "_" + self.travel_method + "_friction.tif" #Cost raster for chosen country and travel method
+		self.empty_folders()
+		self.raster_bin = "output/" + self.country_chosen + "_raster_bin.tif" # Binary output raster
+		self.raster_cont = "opt/geoserver/data_dir/produced_rasters/time-cost-raster.tif" # Continous output raster -> Needs to be displayed in Geoserver
+		self.shp_bin = "opt/geoserver/data_dir/produced_shapefiles/" + self.country_chosen + "_shp_bin.shp" # Binary shp polygon showing pop inside travel time -> Needs to go to postgis and geoserver
+		self.postgis_table = self.country_chosen + "_travel_costs_polygon"
 
 
 	#Open rasters and create arrays for output rasters
-	def open_ds_and_array(self, CostSurfacefn):
+	def open_ds_and_array(self):
 		"""Function to open impedance raster and create arrays of same dimensions
 		to hold the output data.
 
 		Arguments:
-		Costsurfacefn -> impedance raster of chosen travel method
+		None
 
 		Returns:
 		impedance raster, band, geotransform, cost_array (Numpy array of impedance raster),
 		holder_arr (empty array in which to place output - same dimensions as impedance),
 		 graph dataset of impedance raster
 		"""
-		in_ds = gdal.Open(CostSurfacefn) #Open impedance raster with GDAL
+		in_ds = gdal.Open(self.CostSurfacefn) #Open impedance raster with GDAL
 		in_band = in_ds.GetRasterBand(1) #Access raster band
 		geotransform = in_ds.GetGeoTransform() #Access Geotransform data - Origin, pixel dimensions etc
 		costarray = in_band.ReadAsArray() #Read impedance raster into NumPy array
@@ -168,7 +168,7 @@ class Cost_distance:
 
 
 	#Create output rasters
-	def build_rasters(self, in_ds, in_band, geotransform, raster_cont, raster_bin, cum_cost_array_cont, cum_cost_array_bin):
+	def build_rasters(self, in_ds, in_band, geotransform, cum_cost_array_cont, cum_cost_array_bin):
 		"""Function to create output rasters from output NumPy arrays using GDAL
 		library.
 		
@@ -182,7 +182,7 @@ class Cost_distance:
 		"""
 		gtiff = gdal.GetDriverByName('GTiff')
 		#Create continous raster
-		out_ds_cont = gtiff.Create(raster_cont, in_band.XSize, in_band.YSize, 1, gdal.GDT_Int32) #Create a tiff with same dimensions as impedance
+		out_ds_cont = gtiff.Create(self.raster_cont, in_band.XSize, in_band.YSize, 1, gdal.GDT_Int32) #Create a tiff with same dimensions as impedance
 		out_ds_cont.SetProjection(in_ds.GetProjection())
 		out_ds_cont.SetGeoTransform(geotransform)
 		out_band_cont = out_ds_cont.GetRasterBand(1)
@@ -191,7 +191,7 @@ class Cost_distance:
 		out_ds_cont.FlushCache()
 
 		#Create binary raster
-		out_ds_bin = gtiff.Create(raster_bin, in_band.XSize, in_band.YSize, 1, gdal.GDT_Int32) #Create a tiff with same dimensions as impedance
+		out_ds_bin = gtiff.Create(self.raster_bin, in_band.XSize, in_band.YSize, 1, gdal.GDT_Int32) #Create a tiff with same dimensions as impedance
 		out_ds_bin.SetProjection(in_ds.GetProjection())
 		out_ds_bin.SetGeoTransform(geotransform)
 		out_band_bin = out_ds_bin.GetRasterBand(1)
@@ -200,20 +200,19 @@ class Cost_distance:
 		out_ds_bin.FlushCache()
 
 	#Polygonise output raster for input to database analysis
-	def polygonise_travel_times(self, raster, shp_bin):
+	def polygonise_travel_times(self):
 		"""Function to polygonise binary raster using GDAL/OGR for input to PostGIS for Zonal statistics.
 
 		Arguments:
-		raster -> Input binary raster
-		shp_bin -> Output file
+		None
 
 		Returns:
 		None
 		"""		
 		latlong = osr.SpatialReference()
 		latlong.ImportFromEPSG( 4326 ) #Set SRS
-		polygon = shp_bin.encode('utf-8') #Set encodings
-		in_poly_ds = gdal.Open(raster) #Get raster data
+		polygon = self.shp_bin.encode('utf-8') #Set encodings
+		in_poly_ds = gdal.Open(self.raster_bin) #Get raster data
 		polygon_band = in_poly_ds.GetRasterBand(1)
 		drv = ogr.GetDriverByName("ESRI Shapefile") #Set output as ESRI Shp file
 		dst_ds = drv.CreateDataSource(polygon)
