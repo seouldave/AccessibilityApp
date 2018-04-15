@@ -1,4 +1,4 @@
-"""Module contains main function that instantiate the respective classes needed for the application's
+"""Module contains main function that instantiates the respective classes needed for the application's
 calculation, and calls the objects functions. Finally returns zonal statistics JSON element back to Flask to be returned to 
 the client-side. Please see respective modules in lib folder for commented code for different classes."""
 	

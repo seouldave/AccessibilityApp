@@ -13,7 +13,7 @@
 var apiKey = 'AsITKrfH_sDI9TfdJEl4A-kGG_QqNCaXLe80R_kyLWoyHMgnzpTB1BYxHxDVT1TA';
 
 //URL to access Geoserver layers
-var geoserverURL = 'http://172.17.0.2:8080/geoserver/dissertation/wms';
+var geoserverURL = 'http://geo-dev-03.leeds.ac.uk:8080/geoserver/dissertation/wms';
 
 var time_cost_raster_added = false; //Keep false until time_cost_raster_returned from Geoserver. When true, layer will be toggle-able
 

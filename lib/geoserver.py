@@ -8,6 +8,7 @@ upload_raster_geoserver -> Posts raster to Geoserver
 make_sld -> Creates style 
 save_sld -> Read sld data into XML file
 upload_sld -> Post style to Geoserver
+upload_style -> Create style in Geoserver
 """
 
 import requests
@@ -91,6 +92,22 @@ class Geoserver:
 				auth=self.credential
 			)
 		self.apply_style()
+
+
+	#function that creates a new style on geoserver and uploads a specified SLD file to the style container on ther server
+	def upload_style(self, filename, sld_name):
+		resource = 'styles'
+		payload = '<style><name>{0}</name><filename>{1}</filename></style>'.format(sld_name[:-4], filename)
+		headers = {'content-type': 'text/xml'}
+		request_url = urljoin(self.api_entry, resource)
+		r = requests.post(
+			request_url,
+			data=payload,
+			headers=headers,
+			auth=self.credential
+		)
+		#upload SLD file to the style container on the server
+		self.upload_sld(filename, sld_name)
 		
 
 	#Make sld style XML file for Geoserver
@@ -149,8 +166,8 @@ class Geoserver:
 		fh.write(sld_string)
 		fh.close()
 		#create a style and upload the file 
-		#self.upload_style(filename, sld_name)
-		self.upload_sld(filename, sld_name)
+		self.upload_style(filename, sld_name)
+		#self.upload_sld(filename, sld_name)
 
 	def raster_to_geoserver(self):
 		"""Main function to call functions to create files and upload to Geoserver.

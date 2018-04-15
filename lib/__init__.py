@@ -7,4 +7,3 @@ sys.path.append(path_to_dir)
 import cost_distance
 import zonal_statistics
 import geoserver
-#import test_class
