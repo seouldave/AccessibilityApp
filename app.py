@@ -1,3 +1,6 @@
+"""Module containing commands to start API and receive data, send for processing and 
+return results to client-side."""
+
 from flask import Flask, render_template, jsonify, request
 from main import *
 
@@ -6,11 +9,28 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
+	"""Function to show html page when requested from client
+
+	Arguments:
+	None
+
+	Returns:
+	None
+	"""
 	return render_template('index.html')
 
 @app.route('/process', methods=['POST'])
-##Received AJAX request from client-side and pass to 'main' module to call other classes. Returns result to client-side
+
+
 def process():
+	"""Function to receive input from client. Unpacks the JSON data, and forwards variables to main module/function for processing
+	
+	Arguments:
+	None
+
+	Returns:
+	None
+	"""
 	data = request.get_json() #Data received from client-side
 	start_coord = data['array'] #Data received from client-side
 	num_hours = data['time_travel'] #Data received from client-side

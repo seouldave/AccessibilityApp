@@ -23,7 +23,6 @@ from skimage import graph
 class Cost_distance:
 	"""Class to create variables and rasters, and carries out cost-distance analysis"""
 
-	#Initialise
 	def __init__(self, start_coord, num_hours, travel_method, country_chosen, population_chosen):
 		"""Function initialises object and creates class variables.
 		
@@ -45,9 +44,6 @@ class Cost_distance:
 		self.raster_cont = ""
 		self.shp_bin = ""
 
-
-
-	#Remove data from previous analyses
 	def empty_folders(self):
 		"""Function to delete folders of previously produced data
 		
@@ -67,10 +63,8 @@ class Cost_distance:
 		for raster in binary_raster_to_delete:
 			os.remove(os.path.join("output", raster))
 
-
-	#Create variables for inputs from data sent via AJAX
 	def define_variables(self):
-		"""Fuction to define variables for data to be created.
+		"""Function to define variables for data to be created from variables received via AJAX.
 
 		Arguments:
 		None
@@ -81,12 +75,10 @@ class Cost_distance:
 		self.CostSurfacefn = "rasters/" + self.country_chosen.upper() + "/" + self.country_chosen.upper() + "_" + self.travel_method + "_friction.tif" #Cost raster for chosen country and travel method
 		self.empty_folders()
 		self.raster_bin = "output/" + self.country_chosen + "_raster_bin.tif" # Binary output raster
-		self.raster_cont = "opt/geoserver/data_dir/produced_rasters/time-cost-raster.tif" # Continous output raster -> Needs to be displayed in Geoserver
+		self.raster_cont = "opt/geoserver/data_dir/produced_rasters/time-cost-raster.tif" # Continuous output raster -> Needs to be displayed in Geoserver
 		self.shp_bin = "opt/geoserver/data_dir/produced_shapefiles/" + self.country_chosen + "_shp_bin.shp" # Binary shp polygon showing pop inside travel time -> Needs to go to postgis and geoserver
 		self.postgis_table = self.country_chosen + "_travel_costs_polygon"
 
-
-	#Open rasters and create arrays for output rasters
 	def open_ds_and_array(self):
 		"""Function to open impedance raster and create arrays of same dimensions
 		to hold the output data.
@@ -107,8 +99,6 @@ class Cost_distance:
 		costDistMCP = graph.MCP_Geometric(costarray, fully_connected=True) #Create graph dataset of impedance raster using scikit-image
 		return in_ds, in_band, geotransform, costarray, holder_array, costDistMCP
 
-
-	#Get positions in Numpy array from WGS84 coordinates input
 	def get_offsets(self, startCoord, geotransform):
 		"""Function to convert WGS84 input coordinates to cartesian coordinates
 		used to place points within NumPy array.
@@ -132,8 +122,6 @@ class Cost_distance:
 			hosp_offset.append(xy)
 		return hosp_offset
 
-
-	#Calculate costdistances
 	def get_costs(self, holder_array, hosp_offset, costDistMCP, num_hours, costarray):
 		"""Function calculates cost (travel-time in minutes) from each pixel to 
 		each hospital. Output array is created for each input hospital point, the 
@@ -166,8 +154,6 @@ class Cost_distance:
 		np.place(cum_cost_array_bin, costarray==255, 255) #Set nodata values in binary
 		return cum_cost_array_cont, cum_cost_array_bin
 
-
-	#Create output rasters
 	def build_rasters(self, in_ds, in_band, geotransform, cum_cost_array_cont, cum_cost_array_bin):
 		"""Function to create output rasters from output NumPy arrays using GDAL
 		library.
@@ -199,7 +185,6 @@ class Cost_distance:
 		out_band_bin.WriteArray(cum_cost_array_bin) #Write Numpy array into raster band
 		out_ds_bin.FlushCache()
 
-	#Polygonise output raster for input to database analysis
 	def polygonise_travel_times(self):
 		"""Function to polygonise binary raster using GDAL/OGR for input to PostGIS for Zonal statistics.
 

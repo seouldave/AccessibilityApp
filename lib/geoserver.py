@@ -31,9 +31,7 @@ class Geoserver:
 		"""
 		self.num_hours = num_hours
 		self.api_entry = 'http://172.17.0.2:8080/geoserver/rest/'
-		self.credential = ('admin', 'geoserver')
-
-	
+		self.credential = ('admin', 'geoserver')	
 
 	def upload_raster_geoserver(self, file_name):
 		"""Function to create coverage (raster) store in geoserver and upload 
@@ -57,7 +55,6 @@ class Geoserver:
 				auth=self.credential
 			)
 
-
 	def apply_style(self):
 		"""Function to apply style to raster using SLD style file in Geoserver.
 
@@ -72,7 +69,6 @@ class Geoserver:
 		headers = {'Content-type': 'text/xml'}
 		request_url = urljoin(self.api_entry, resource)
 		resp = requests.put(request_url, auth=self.credential, data=payload, headers=headers) #send data
-
 
 	def upload_sld(self, file_name, sld_name):
 		"""Function to create new style in Geoserver
@@ -93,9 +89,12 @@ class Geoserver:
 			)
 		self.apply_style()
 
-
-	#function that creates a new style on geoserver and uploads a specified SLD file to the style container on ther server
 	def upload_style(self, filename, sld_name):
+		"""Function that creates a new style on geoserver
+		Arguments:
+		filename 
+		sld_name -> style file
+		"""
 		resource = 'styles'
 		payload = '<style><name>{0}</name><filename>{1}</filename></style>'.format(sld_name[:-4], filename)
 		headers = {'content-type': 'text/xml'}
@@ -109,8 +108,6 @@ class Geoserver:
 		#upload SLD file to the style container on the server
 		self.upload_sld(filename, sld_name)
 		
-
-	#Make sld style XML file for Geoserver
 	def make_sld(self, cost_distance_threshold):
 		"""Function to make SLD style XML file for Geoserver based on user's 
 		travel-time threshold.
@@ -167,7 +164,6 @@ class Geoserver:
 		fh.close()
 		#create a style and upload the file 
 		self.upload_style(filename, sld_name)
-		#self.upload_sld(filename, sld_name)
 
 	def raster_to_geoserver(self):
 		"""Main function to call functions to create files and upload to Geoserver.

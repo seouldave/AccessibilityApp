@@ -11,9 +11,9 @@ import json
 import gdal, osr, ogr
 import psycopg2
 
+
 class Zonal_statistics:
 
-	#Initialise
 	def __init__(self, postgis_table, shp_bin, country_chosen, population_chosen):
 		"""Function to initialise object and create class variables
 
@@ -30,8 +30,6 @@ class Zonal_statistics:
 		self.country_chosen = country_chosen
 		self.population_chosen = population_chosen
 
-
-	#Import binary shapefile to PostGIS table
 	def shp_to_postGIS(self):
 		"""Function to make connection with PostGIS database and import binary shapefile.
 
@@ -50,7 +48,7 @@ class Zonal_statistics:
 			print "Can't connect to the database"
 
 		cursor = connection.cursor()
-		#Drop tables from previous analyses and create newtable
+		#Drop tables from previous analyses and create new table
 		cursor.execute("DROP TABLE IF EXISTS {0}".format(self.postgis_table)) 
 		cursor.execute("""CREATE TABLE {0} (
 							id SERIAL,
@@ -107,7 +105,6 @@ class Zonal_statistics:
 		cursor.execute("UPDATE zonal_stats_{0} SET pop_outside_2hrs = total_pop - pop_inside_2hrs, percent_without_access = ((total_pop - pop_inside_2hrs)/total_pop)*100".format(self.country_chosen))
 		connection.set_isolation_level(old_level)
 
-	#Call PostGIS querys to run zonal stats
 	def get_zonal_stats(self):
 		"""Function to query database and get zonal statistics table to be
 		returned to client-side.
