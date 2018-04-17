@@ -118,7 +118,7 @@ class Zonal_statistics:
 		try:
 			connection = psycopg2.connect("dbname='gis' user='postgres' host='172.17.0.3' password='goat_75'")
 		except:
-			print "Can't connect to the database"
+			print "Cannot connect to the database" #This comment is for testing only. The message will not be returned to the user.
 		old_level = connection.isolation_level
 		connection.set_isolation_level(0)
 		cursor = connection.cursor()
